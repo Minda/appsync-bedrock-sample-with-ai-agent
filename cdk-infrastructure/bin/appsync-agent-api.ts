@@ -9,6 +9,7 @@ new AppsyncAgentAPIStack(new cdk.App(), 'AppsyncAgentAPIDemoRepo', {
 
 	// Setting it to us-east-1 as bedrock is not available in all regions.
 	env: {
+		account: '***REMOVED***',
 		region: 'us-east-1'
 	}
 });
