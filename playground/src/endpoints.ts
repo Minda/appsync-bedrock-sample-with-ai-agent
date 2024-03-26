@@ -1,10 +1,18 @@
 export const agentApiEndpoint = process.env.REACT_APP_AGENTAPIENDPOINT as string
 
 export const cognitoConfig = {
-	region: process.env.REACT_APP_REGION as string,
-	userPoolId: process.env.REACT_APP_COGNITOPOOL as string,
-	userPoolWebClientId: process.env.REACT_APP_COGNITOCLIENT as string,
-}
+  region: process.env.REACT_APP_REGION as string,
+  userPoolId: process.env.REACT_APP_COGNITOPOOL as string,
+  userPoolWebClientId: process.env.REACT_APP_COGNITOCLIENT as string,
+};
+
+export const awsConfig = {
+  Auth: cognitoConfig,
+  Storage: {
+    bucket: 'aws-audio-recordings',
+    region: process.env.REACT_APP_REGION as string,
+  },
+};
 
 export const fmHandlerArns = [
 	{

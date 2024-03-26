@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Button, Icon, View, Grid, useTheme } from '@aws-amplify/ui-react';
 import { ReactMic } from 'react-mic';
+import { Auth, Storage } from 'aws-amplify';
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 
 interface AudioRecorderProps {
@@ -14,24 +15,17 @@ export function AudioRecorder({ onRecordingComplete }: AudioRecorderProps) {
   //const s3 = new AWS.S3();
 
 const uploadAudioToS3 = async (audioBlob: Blob) => {
-  const s3Client = new S3Client({ region: "us-east-1" });
-
-  const fileName = `audio_${Date.now()}.webm`; // Generate a unique file name
-  const uploadParams = {
-    Bucket: "minda-audio-recordings",
-    Key: fileName,
-    Body: audioBlob,
-    ContentType: "audio/webm",
-  };
-
   try {
-    const uploadCommand = new PutObjectCommand(uploadParams);
-    await s3Client.send(uploadCommand);
-    const audioFileUrl = `https://${uploadParams.Bucket}.s3.amazonaws.com/${uploadParams.Key}`;
-    console.log("Audio file uploaded successfully:", audioFileUrl);
-    onRecordingComplete(audioFileUrl); // Call the onRecordingComplete prop function with the S3 URL
+    const currentUser = await Auth.currentAuthenticatedUser();
+    const fileName = `audio_${Date.now()}.webm`;
+    await Storage.put(fileName, audioBlob, {
+      contentType: 'audio/webm',
+    });
+    const audioFileUrl = await Storage.get(fileName);
+    console.log('Audio file uploaded successfully:', audioFileUrl);
+    onRecordingComplete(audioFileUrl);
   } catch (error) {
-    console.error("Error uploading audio to S3:", error);
+    console.error('Error uploading audio to S3:', error);
   }
 };
 
