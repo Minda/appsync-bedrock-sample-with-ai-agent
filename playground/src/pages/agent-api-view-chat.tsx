@@ -38,26 +38,10 @@ export function AIAgentViewChat () {
         return <Loader/>
     }
 
-    const handleRecordingComplete = async (audioBlob:any) => {
-      // Fetch pre-signed URL from your backend
-      const response = await fetch('/api/get-presigned-url');
-      const { uploadURL } = await response.json();
-
-      // Use fetch or Axios to PUT the blob to the pre-signed URL
-      const uploadResponse = await fetch(uploadURL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'audio/webm;codecs=opus', // Or the correct content type of your audio blob
-        },
-        body: audioBlob,
-      });
-
-      if (uploadResponse.ok) {
-        console.log('Upload successful');
-        // Optionally, notify your backend about the new file or update your UI accordingly
-      } else {
-        console.error('Upload failed');
-      }
+  const handleRecordingComplete = async (audioUrl: string) => {
+      console.log('Audio uploaded successfully:', audioUrl);
+      // Update the UI or submit the message with the audio URL
+      submitMessage({ message: chatString, audioFileUrl: audioUrl });
     };
 
 
