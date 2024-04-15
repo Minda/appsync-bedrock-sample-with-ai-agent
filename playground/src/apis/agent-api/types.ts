@@ -1,13 +1,3 @@
-export interface AudioRecording {
-    id: string
-    timestamp: string
-    conversationId: string
-    eventId: string
-    sender: string
-    url: string
-}
-
-
 export interface ConversationEvent {
   id: string
   timestamp: string

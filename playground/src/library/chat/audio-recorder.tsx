@@ -1,33 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { Button, Icon, View, Grid, useTheme } from '@aws-amplify/ui-react';
 import { ReactMic } from 'react-mic';
-import { Auth, Storage } from 'aws-amplify';
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import AWS from '../../aws-config';
+
+const s3 = new AWS.S3();
 
 interface AudioRecorderProps {
-  onRecordingComplete: (audioFileUrl: string) => void;
+  onRecordingComplete: (audioUrl: string) => void;
 }
 
 export function AudioRecorder({ onRecordingComplete }: AudioRecorderProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [audioBlobUrl, setAudioBlobUrl] = useState('');
-
-  //const s3 = new AWS.S3();
-
-const uploadAudioToS3 = async (audioBlob: Blob) => {
-  try {
-    const currentUser = await Auth.currentAuthenticatedUser();
-    const fileName = `audio_${Date.now()}.webm`;
-    await Storage.put(fileName, audioBlob, {
-      contentType: 'audio/webm',
-    });
-    const audioFileUrl = await Storage.get(fileName);
-    console.log('Audio file uploaded successfully:', audioFileUrl);
-    onRecordingComplete(audioFileUrl);
-  } catch (error) {
-    console.error('Error uploading audio to S3:', error);
-  }
-};
 
   const handleRecording = () => {
     if (!isRecording) {
@@ -51,12 +35,26 @@ const uploadAudioToS3 = async (audioBlob: Blob) => {
     console.log('chunk of real-time data is: ', recordedBlob);
   };
 
-  const onStop = (recordedBlob: { blobURL: React.SetStateAction<string>; blob: Blob }) => {
-    console.log('recordedBlob is: ', recordedBlob);
-    setAudioBlobUrl(recordedBlob.blobURL);
-    uploadAudioToS3(recordedBlob.blob); // Call the upload function
-  };
+const onStop = async (recordedBlob: { blobURL: React.SetStateAction<string>; blob: Blob }) => {
+  console.log('recordedBlob is: ', recordedBlob);
+  setAudioBlobUrl(recordedBlob.blobURL);
 
+  try {
+    const params = {
+      Bucket: 'awsaudiouploads',
+      Key: `audio-${Date.now()}.webm`,
+      Body: recordedBlob.blob,
+      ContentType: 'audio/webm',
+      ACL: 'public-read',
+    };
+
+    const { Location } = await s3.upload(params).promise();
+    console.log('Audio uploaded successfully:', Location);
+    onRecordingComplete(Location);
+  } catch (error) {
+    console.error('Error uploading audio:', error);
+  }
+};
   const { tokens } = useTheme();
 
   return (

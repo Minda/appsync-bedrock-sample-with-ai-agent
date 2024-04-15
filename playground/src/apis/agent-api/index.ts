@@ -8,8 +8,8 @@ export { useAgentApiCreateConversation } from "./hooks/useCreateConversation";
 export { useAgentApiDeleteAction } from "./hooks/useDeleteAction";
 export { useAgentApiDeleteAgent } from "./hooks/useDeleteAgent";
 export { useAgentApiDeleteConversation } from "./hooks/useDeleteConversation";
-export { useAgentApiInvokeQuery, useAgentApiSendMessage } from "./hooks/useSendMessage"; //***
-export { useAgentApiSubscribeConversation } from "./hooks/useSubscribeConversation"; //***
+export { useAgentApiInvokeQuery, useAgentApiSendMessage } from "./hooks/useSendMessage";
+export { useAgentApiSubscribeConversation } from "./hooks/useSubscribeConversation";
 
 /*
 * Export everything in this directory

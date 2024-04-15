@@ -8,10 +8,6 @@ import * as iam from 'aws-cdk-lib/aws-iam';
 import { Construct } from 'constructs';
 import { addJsResolver } from './appsync-js-functions';
 
-/*
-* ...
-* */
-
 interface AgentApiProps {
     enableConstructingAgents: boolean
     cognito: cognito.UserPool
