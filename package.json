@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "@types/aws-sdk": "^2.7.0",
+    "anthropic": "^0.0.0",
     "aws-sdk": "^2.1595.0",
     "howler": "^2.2.4",
     "react-mic": "^12.4.6"

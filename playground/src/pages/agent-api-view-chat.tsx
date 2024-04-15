@@ -41,9 +41,9 @@ export function AIAgentViewChat () {
   const handleRecordingComplete = async (audioUrl: string) => {
       console.log('Audio uploaded successfully:', audioUrl);
       // Update the UI or submit the message with the audio URL
+      const chatString = "test string"
       submitMessage({ message: chatString, audioFileUrl: audioUrl });
     };
-
 
     return (
         <Flex>
@@ -63,7 +63,7 @@ export function AIAgentViewChat () {
                             placeholder="Type your message here"
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter') {
-                                    const audioFileUrl = "http://www.kittentech.com"
+                                    const audioFileUrl = "http://www.testurl.com"
                                     // Send the message with the audio file URL
                                     submitMessage({ message: chatString, audioFileUrl: audioFileUrl });
                                     setChatString('')
