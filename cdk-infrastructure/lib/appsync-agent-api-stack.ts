@@ -31,16 +31,16 @@ export class AppsyncAgentAPIStack extends cdk.Stack {
             lambdaPath: 'handler-claude-simple' 
         })
 
-        const websocketChat = buildFoundationModelHandler(this, {
-            agentApi, 
-            lambdaPath: 'handler-claude-websocket' 
-        })
-        
-        const agentChat = buildFoundationModelHandler(this, { 
-            agentApi,
-            toolApi: carDealerExample,
-            lambdaPath: 'handler-claude-agent' 
-        })
+        // const websocketChat = buildFoundationModelHandler(this, {
+        //     agentApi,
+        //     lambdaPath: 'handler-claude-websocket'
+        // })
+        //
+        // const agentChat = buildFoundationModelHandler(this, {
+        //     agentApi,
+        //     toolApi: carDealerExample,
+        //     lambdaPath: 'handler-claude-agent'
+        // })
 
         // For later use in website, we also record the deployed region
         new cdk.CfnOutput(this, 'Region', { value: this.region })

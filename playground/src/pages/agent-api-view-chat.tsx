@@ -41,7 +41,7 @@ export function AIAgentViewChat () {
   const handleRecordingComplete = async (audioUrl: string) => {
       console.log('Audio uploaded successfully:', audioUrl);
       // Update the UI or submit the message with the audio URL
-      const chatString = "test string"
+      const chatString = " "+audioUrl;
       submitMessage({ message: chatString, audioFileUrl: audioUrl });
     };
 
