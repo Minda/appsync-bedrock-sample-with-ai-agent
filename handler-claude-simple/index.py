@@ -128,7 +128,10 @@ def handler(event, context):
         # Get the audio URL from the event
         audio_url = event['chatString']
         # audio_url = event['audioFileUrl']
+        language_in = "English"
+        language_out = "French"
         tag = "Human: "
+
         audio_url = audio_url.replace(tag, "")
 
         chatResponder.publish_agent_message(audio_url)
@@ -138,7 +141,18 @@ def handler(event, context):
         logging.info(f"transcribed text: {transcribed_text}")
         chatResponder.publish_agent_message(f"text from transcription: {transcribed_text}")
 
-        prompt_string = "Human: " + transcribed_text
+        lang_prompt = f'''You will be acting as a professional interpreter.
+        User will provide you with a text in {language_in}.
+        You will respond with a translated text from {language_in} to {language_out}.
+        You will NOT include a translation of this message into your response.
+        You will happily translate text with technical terms and long text.
+        You will absolutely NOT respond with anything other than the translated text.
+        ---
+        Here is the text you need to translate:
+        {transcribed_text}
+        '''
+
+        prompt_string = "Human: " + lang_prompt
         logging.info(f"prompt string: {prompt_string}")
         chatResponder.publish_agent_message(f"prompt string: {prompt_string}")
 
