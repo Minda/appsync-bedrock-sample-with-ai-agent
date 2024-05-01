@@ -42,6 +42,8 @@ export function AIAgentViewChat () {
       console.log('Audio uploaded successfully:', audioUrl);
       // Update the UI or submit the message with the audio URL
       const chatString = " "+audioUrl;
+      // submitMessage({ message: 'first message', audioFileUrl: audioUrl });
+      // submitMessage({ message: 'second message', audioFileUrl: audioUrl });
       submitMessage({ message: chatString, audioFileUrl: audioUrl });
     };
 

@@ -60,21 +60,21 @@ export function ChatRendered () {
         if (event.sender === 'user'){
             if (lastSection !== 'user') {
                 lastSection = 'user'
-                renderedChat.push(<EnterUserSection key={index}/>)
+                // renderedChat.push(<EnterUserSection key={index}/>)
             }
 
             if (event.event.message) {
-                renderedChat.push(
-                    <UserChatMessage
-                        text={event.event.message}
-                        event={event}
-                        lastEventTime={lastEffectEndTime}
-                        key={event.id}
-                    />
-                )
-                renderedChat.push(
-                    <Text><a href={event.event.audioFileUrl}>{event.event.audioFileUrl} </a> </Text>
-                )
+                // renderedChat.push(
+                //     <UserChatMessage
+                //         text={event.event.message}
+                //         event={event}
+                //         lastEventTime={lastEffectEndTime}
+                //         key={event.id}
+                //     />
+                // )
+                // renderedChat.push(
+                //     <Text><a href={event.event.audioFileUrl}>link to uploaded audio file </a> </Text>
+                // )
             }
 
             if (event.event.actionResult) {
@@ -93,7 +93,8 @@ export function ChatRendered () {
 
             if (lastSection !== 'agent') {
                 lastSection = 'agent'
-                renderedChat.push(<EnterAgentSection name={agentObject.value?.name} key={index}/>)
+                // renderedChat.push(<EnterAgentSection name={agentObject.value?.name} key={index}/>)
+                renderedChat.push(<EnterAgentSection name="Message" key={index}/>)
             }
 
             if (event.event.message) {

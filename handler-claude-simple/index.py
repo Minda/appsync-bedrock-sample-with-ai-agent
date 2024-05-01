@@ -134,11 +134,13 @@ def handler(event, context):
 
         audio_url = audio_url.replace(tag, "")
 
-        chatResponder.publish_agent_message(audio_url)
+        #chatResponder.publish_agent_message(audio_url)
 
         # Transcribe the audio using Amazon Transcribe
         transcribed_text = transcribe_audio(audio_url)
         logging.info(f"transcribed text: {transcribed_text}")
+
+        #TODO: get this into the
         chatResponder.publish_agent_message(f"text from transcription: {transcribed_text}")
 
         lang_prompt = f'''You will be acting as a professional interpreter.
@@ -154,7 +156,7 @@ def handler(event, context):
 
         prompt_string = "Human: " + lang_prompt
         logging.info(f"prompt string: {prompt_string}")
-        chatResponder.publish_agent_message(f"prompt string: {prompt_string}")
+        # chatResponder.publish_agent_message(f"prompt string: {prompt_string}")
 
         # Forward the transcribed text to Anthropic Bedrock
         response = anthropic_bedrock(prompt_string)
