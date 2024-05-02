@@ -29,12 +29,15 @@ export function useAgentApiSendMessage (cid: string = '') {
 
     const setConversationEvents = useSetRecoilState(ConversationEvents)
 
-    console.log('useAgentApiSendMessage', cid)
+
 
     return async (event: any) => {
         sendConversationMessageQuery.invoke({cid, event})
             .then(result => {
                 setConversationEvents((data) => {
+
+                    console.log('useAgentApiSendMessage with conversation id=', cid)
+                    console.log("event: ", event)
 
                     let targetConversationEvents = data[cid]
                     if (!targetConversationEvents || targetConversationEvents.loading !== 'loaded'){

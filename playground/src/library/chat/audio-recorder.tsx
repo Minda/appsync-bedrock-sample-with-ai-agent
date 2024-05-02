@@ -32,7 +32,7 @@ export function AudioRecorder({ onRecordingComplete }: AudioRecorderProps) {
   };
 
   const onData = (recordedBlob: any) => {
-    console.log('chunk of real-time data is: ', recordedBlob);
+    //console.log('chunk of real-time data is: ', recordedBlob);
   };
 
 const onStop = async (recordedBlob: { blobURL: React.SetStateAction<string>; blob: Blob }) => {
@@ -49,7 +49,7 @@ const onStop = async (recordedBlob: { blobURL: React.SetStateAction<string>; blo
     };
 
     const { Location } = await s3.upload(params).promise();
-    console.log('Audio uploaded successfully:', Location);
+    console.log('Audiorecorder: audio uploaded successfully to:', Location);
     onRecordingComplete(Location);
   } catch (error) {
     console.error('Error uploading audio:', error);

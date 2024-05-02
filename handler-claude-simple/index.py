@@ -122,19 +122,20 @@ def handler(event, context):
         logging.info("This is an informational message")
         logging.error("This was Minda and Vlad making an catwifhat message")
         logging.info(event)
-        #logging.info(event['audioFileUrl'])
 
 
         # Get the audio URL from the event
-        audio_url = event['chatString']
-        # audio_url = event['audioFileUrl']
+        chat_string = event['chatString']
+        logging.info(f"**>> CHAT MESSAGE: {chat_string}")
+        audio_url = event['userInput']['audioFileUrl']
+        logging.info(f"**>> URL: {audio_url}")
+        #chatResponder.publish_agent_message(f"URL: {audio_url}")
+
         language_in = "English"
         language_out = "French"
         tag = "Human: "
 
         audio_url = audio_url.replace(tag, "")
-
-        #chatResponder.publish_agent_message(audio_url)
 
         # Transcribe the audio using Amazon Transcribe
         transcribed_text = transcribe_audio(audio_url)
