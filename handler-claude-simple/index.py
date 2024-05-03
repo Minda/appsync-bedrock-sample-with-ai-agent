@@ -1,6 +1,9 @@
-import boto3, json, time, logging
+import boto3, json, time, random, string, logging, os
 from chatResponder import ChatResponder
 from botocore.config import Config
+from elevenlabs.client import ElevenLabs
+from elevenlabs import save
+import tempfile
 
 bedrock = boto3.client('bedrock-runtime', config=Config(region_name='us-east-1'))
 s3_client = boto3.client('s3', config=Config(region_name='us-east-1'))
@@ -161,7 +164,40 @@ def handler(event, context):
 
         # Forward the transcribed text to Anthropic Bedrock
         response = anthropic_bedrock(prompt_string)
-        chatResponder.publish_agent_message(response)
+        #chatResponder.publish_agent_message(response)
+
+        # Generate audio from the response
+        client = ElevenLabs(api_key="26b568cd9804dc5c637bf7176bda54b7")
+        audio = client.generate(
+            text=response,
+            voice="Arnold",
+            model='eleven_multilingual_v2'
+        )
+
+        timestamp = int(time.time())
+        random_string = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
+
+        audio_file_name = f"{timestamp}_{random_string}.mp3"
+        logging.info(f"audio file name: {audio_file_name}")
+
+        #save(audio, audio_file_path)
+        audio_file_path = os.path.join('/tmp', audio_file_name)
+        #client.save_to_file(audio, audio_file_path)
+        save(audio, audio_file_path)
+
+        bucket_name = 'awsaudiouploads'
+
+        #audio_key = f'audio/{timestamp}_{random_string}.mp3'
+        audio_key = f'audio/{audio_file_name}'
+
+        logging.info(f"audio_key: {audio_key}")
+
+        s3_client.upload_file(audio_file_path, bucket_name, audio_key)
+        audio_url = f'https://{bucket_name}.s3.amazonaws.com/{audio_key}'
+
+        logging.info(f"audio_url: {audio_url}")
+
+        chatResponder.publish_agent_message(f"Translated text: {response}, Audio URL: {audio_url}")
 
     except Exception as e:
         logging.exception("handler: An error occurred")
