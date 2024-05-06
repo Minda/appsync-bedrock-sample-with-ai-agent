@@ -1,6 +1,16 @@
 import { View, Card, Alert, Text, useTheme, Flex, Heading, Button } from "@aws-amplify/ui-react"
 import { ConversationEvent } from "../../apis/agent-api/types"
 import { TypingEffect } from "../typeEffect"
+import React, { useEffect, useState } from 'react';
+import AWS from '../../aws-config';
+
+function extractUrl(text: string) {
+  const urlRegex = /(https?:\/\/[^\s]+)/g; // A basic URL matching regex
+  const match = text.match(urlRegex);
+  console.log("found url in text :", match)
+
+  return match ? match[0] : ""; // Return the first URL found or null
+}
 
 interface ChatItemProps {
     text: string
@@ -29,21 +39,62 @@ export function UserChatError (props: ChatItemProps) {
 }
 
 export function AgentChatMessage (props: ChatItemProps) {
-    return <View textAlign='left' paddingLeft={20} paddingRight={20}>
-        <View lineHeight={2}>
-            <Text>
-                {
-                    props.event.disableTyping && props.text
-                }
-                {
-                    !props.event.disableTyping && <TypingEffect startTime={props.lastEventTime} text={props.text}/>
-                }
-            </Text>
-        </View>
-    </View>
+  const url = extractUrl(props.text);
+  const [audioUrl, setAudioUrl] = useState<string | "">("");
+
+  useEffect(() => {
+    const fetchAudioFile = async () => {
+      console.log("fetching audio file from url: ", url)
+
+      try {
+        const s3 = new AWS.S3();
+        const params = {
+          Bucket: 'awsaudiouploads',
+          Key: url.replace('https://awsaudiouploads.s3.amazonaws.com/', ''),
+        };
+
+        const data = await s3.getObject(params).promise();
+        if (data.Body) {
+          const blob = new Blob([data.Body as BlobPart], { type: 'audio/mpeg' });
+          const audioUrl = URL.createObjectURL(blob);
+          console.log("audio url created: ", audioUrl)
+          setAudioUrl(audioUrl);
+        } else {
+          console.error('Audio file body is undefined');
+        }
+      } catch (error) {
+        console.error('Error fetching audio file:', error);
+      }
+    };
+
+    if (url) {
+      console.log("url found, fetching audio file")
+      fetchAudioFile();
+    }
+  }, [url]);
+
+
+  return (
+      <Text>
+          {props.event.disableTyping && <span>{props.text.replace(url, '')}</span>}
+          {/* Replace URL with empty space in displayed text if present */}
+
+          {
+              !props.event.disableTyping && <TypingEffect startTime={props.lastEventTime} text={props.text}/>
+          }
+
+          {
+              url && <span>Extracted URL: <a href={url}>{url}</a></span>
+          }
+          <audio src={audioUrl} controls>
+              Your browser does not support the audio element.
+          </audio>
+          {/* Display the extracted URL separately if found */}
+      </Text>
+  );
 }
 
-export function AgentPartialChatMessage (props: {text: string}) {
+export function AgentPartialChatMessage(props: { text: string }) {
     return <View textAlign='left' paddingLeft={20} paddingRight={20}>
         <View lineHeight={2}>
             <Text>
