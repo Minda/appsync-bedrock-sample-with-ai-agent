@@ -20,6 +20,7 @@ export function subscribeConversationMessages(conversationId: string): any {
                     actionResult
                     innerDialog
                     message
+                    audioFileUrl
                 }
             }
         }  

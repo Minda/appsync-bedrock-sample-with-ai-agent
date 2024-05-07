@@ -19,6 +19,7 @@ input EventMessageInput @aws_cognito_user_pools {
     innerDialog: String
     actionRequested: String
     actionResult: String
+    audioFileUrl: String
 }
 
 type Conversation @aws_cognito_user_pools {

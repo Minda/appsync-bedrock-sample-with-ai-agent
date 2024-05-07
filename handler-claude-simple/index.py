@@ -122,10 +122,7 @@ def handler(event, context):
     chatResponder = ChatResponder(event['conversationData']['id'])    
 
     try:
-        logging.info("This is an informational message")
-        logging.error("This was Minda and Vlad making an catwifhat message")
         logging.info(event)
-
 
         # Get the audio URL from the event
         chat_string = event['chatString']
@@ -164,6 +161,7 @@ def handler(event, context):
 
         # Forward the transcribed text to Anthropic Bedrock
         response = anthropic_bedrock(prompt_string)
+        logging.info(f"response from anthropic bedrock: {response}")
         #chatResponder.publish_agent_message(response)
 
         # Generate audio from the response
@@ -197,7 +195,10 @@ def handler(event, context):
 
         logging.info(f"audio_url: {audio_url}")
 
-        chatResponder.publish_agent_message(f"Translated text: {response}, Audio URL: {audio_url}")
+        # chatResponder.publish_agent_message(f"Translated text: {response}, Audio URL: {audio_url}")
+        chatResponder.publish_agent_message(
+            response, audio_url
+        )
 
     except Exception as e:
         logging.exception("handler: An error occurred")

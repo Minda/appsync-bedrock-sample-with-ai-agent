@@ -81,7 +81,7 @@ const onStop = async (recordedBlob: { blobURL: React.SetStateAction<string>; blo
             strokeColor="#000000"
             backgroundColor="rgb(4, 125, 149)" />
         </View>
-        <View>
+        <View className={'hidden'}>
           {audioBlobUrl && <audio src={audioBlobUrl} controls />}
         </View>
       </Grid>

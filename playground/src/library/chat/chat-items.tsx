@@ -7,7 +7,7 @@ import AWS from '../../aws-config';
 function extractUrl(text: string) {
   const urlRegex = /(https?:\/\/[^\s]+)/g; // A basic URL matching regex
   const match = text.match(urlRegex);
-  console.log("found url in text :", match)
+  //console.log("found url in text :", match)
 
   return match ? match[0] : ""; // Return the first URL found or null
 }
@@ -39,8 +39,13 @@ export function UserChatError (props: ChatItemProps) {
 }
 
 export function AgentChatMessage (props: ChatItemProps) {
-  const url = extractUrl(props.text);
+  // const url = extractUrl(props.text);
+  console.log("props: ", props)
+  const url = props.event.event.audioFileUrl ?? "";
+  console.log("audio file url from props: ", url)
   const [audioUrl, setAudioUrl] = useState<string | "">("");
+
+  //const [audioFileUrl, setAudioFileUrl] = useState<string | "">(props.);
 
   useEffect(() => {
     const fetchAudioFile = async () => {
@@ -68,7 +73,7 @@ export function AgentChatMessage (props: ChatItemProps) {
     };
 
     if (url) {
-      console.log("url found, fetching audio file")
+      //console.log("url found, fetching audio file")
       fetchAudioFile();
     }
   }, [url]);
@@ -84,11 +89,14 @@ export function AgentChatMessage (props: ChatItemProps) {
           }
 
           {
-              url && <span>Extracted URL: <a href={url}>{url}</a></span>
+              url && <span className={'hidden'}>Extracted URL: <a href={url}>{url}</a></span>
           }
           <audio src={audioUrl} controls>
-              Your browser does not support the audio element.
+              Your browser does not support the audio element from text.
           </audio>
+          {/*<audio src={props.event.event.audioFileUrl} controls>*/}
+          {/*    Your browser does not support the audio element from event.*/}
+          {/*</audio>*/}
           {/* Display the extracted URL separately if found */}
       </Text>
   );
