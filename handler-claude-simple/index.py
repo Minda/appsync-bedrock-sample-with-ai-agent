@@ -116,6 +116,26 @@ def anthropic_bedrock (prompt):
     
     return (([*response_json.values()][0]))
 
+def makeUniqueKey():
+    timestamp = int(time.time())
+    random_string = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
+    return f"{timestamp}_{random_string}"
+    # timestamp = int(time.time())
+    # random_string = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
+
+def getLanguagePrompt(language_in, language_out, transcribed_text):
+    lang_prompt = f'''You will be acting as a professional interpreter.
+            User will provide you with a text in {language_in}.
+            You will respond with a translated text from {language_in} to {language_out}.
+            You will NOT include a translation of this message into your response.
+            You will happily translate text with technical terms and long text.
+            You will absolutely NOT respond with anything other than the translated text.
+            ---
+            Here is the text you need to translate:
+            {transcribed_text}
+            '''
+    return lang_prompt
+
 def handler(event, context):
 
     # Setup ability to Respond to chat
@@ -124,47 +144,37 @@ def handler(event, context):
     try:
         logging.info(event)
 
-        # Get the audio URL from the event
+        # Get the chat message from the event
         chat_string = event['chatString']
         logging.info(f"**>> CHAT MESSAGE: {chat_string}")
+
+        # Get the audio URL from the event
         audio_url = event['userInput']['audioFileUrl']
         logging.info(f"**>> URL: {audio_url}")
         #chatResponder.publish_agent_message(f"URL: {audio_url}")
 
+        # Get the language in and language out TODO: from the event
         language_in = "English"
         language_out = "French"
         tag = "Human: "
 
-        audio_url = audio_url.replace(tag, "")
-
+        # TRANSCRIPTION
         # Transcribe the audio using Amazon Transcribe
-        transcribed_text = transcribe_audio(audio_url)
+        transcribed_text = transcribe_audio(audio_url.replace(tag, ""))
         logging.info(f"transcribed text: {transcribed_text}")
+        chatResponder.publish_agent_message( #TODO: save in database with agent as a "human"
+            transcribed_text, audio_url
+        )
 
-        #TODO: get this into the
-        chatResponder.publish_agent_message(f"text from transcription: {transcribed_text}")
-
-        lang_prompt = f'''You will be acting as a professional interpreter.
-        User will provide you with a text in {language_in}.
-        You will respond with a translated text from {language_in} to {language_out}.
-        You will NOT include a translation of this message into your response.
-        You will happily translate text with technical terms and long text.
-        You will absolutely NOT respond with anything other than the translated text.
-        ---
-        Here is the text you need to translate:
-        {transcribed_text}
-        '''
-
-        prompt_string = "Human: " + lang_prompt
+        #TRANSLATION
+        prompt_string = "Human: " + getLanguagePrompt(language_in, language_out, transcribed_text)
         logging.info(f"prompt string: {prompt_string}")
-        # chatResponder.publish_agent_message(f"prompt string: {prompt_string}")
 
         # Forward the transcribed text to Anthropic Bedrock
         response = anthropic_bedrock(prompt_string)
         logging.info(f"response from anthropic bedrock: {response}")
-        #chatResponder.publish_agent_message(response)
 
-        # Generate audio from the response
+        # Generate audio from the response from Anthropic Bedrock
         client = ElevenLabs(api_key="26b568cd9804dc5c637bf7176bda54b7")
         audio = client.generate(
             text=response,
@@ -172,30 +182,23 @@ def handler(event, context):
             model='eleven_multilingual_v2'
         )
 
-        timestamp = int(time.time())
-        random_string = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
-
-        audio_file_name = f"{timestamp}_{random_string}.mp3"
-        logging.info(f"audio file name: {audio_file_name}")
-
-        #save(audio, audio_file_path)
+        audio_file_name = f"{makeUniqueKey()}.mp3"
         audio_file_path = os.path.join('/tmp', audio_file_name)
-        #client.save_to_file(audio, audio_file_path)
+        logging.info(f"audio file name: {audio_file_name}")
+        logging.info(f"audio file path: {audio_file_path}")
+
+        #Save the audio to a file
         save(audio, audio_file_path)
 
+        #Upload the audio to S3
         bucket_name = 'awsaudiouploads'
-
-        #audio_key = f'audio/{timestamp}_{random_string}.mp3'
         audio_key = f'audio/{audio_file_name}'
-
         logging.info(f"audio_key: {audio_key}")
 
         s3_client.upload_file(audio_file_path, bucket_name, audio_key)
         audio_url = f'https://{bucket_name}.s3.amazonaws.com/{audio_key}'
-
         logging.info(f"audio_url: {audio_url}")
 
-        # chatResponder.publish_agent_message(f"Translated text: {response}, Audio URL: {audio_url}")
         chatResponder.publish_agent_message(
             response, audio_url
         )
