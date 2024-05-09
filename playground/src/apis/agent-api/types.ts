@@ -13,6 +13,8 @@ export interface EventMessage {
     actionRequested?: string
 	actionResult?: string
     audioFileUrl?: string
+    languageIn?: string
+    languageOut?: string
 }
 
 export interface Conversation {

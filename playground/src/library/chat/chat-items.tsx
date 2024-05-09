@@ -40,16 +40,16 @@ export function UserChatError (props: ChatItemProps) {
 
 export function AgentChatMessage (props: ChatItemProps) {
   // const url = extractUrl(props.text);
-  console.log("props: ", props)
+  console.log("event of id ", props.event.id,": ", props.event.event)
   const url = props.event.event.audioFileUrl ?? "";
-  console.log("audio file url from props: ", url)
+  // console.log("audio file url from props: ", url)
   const [audioUrl, setAudioUrl] = useState<string | "">("");
 
   //const [audioFileUrl, setAudioFileUrl] = useState<string | "">(props.);
 
   useEffect(() => {
     const fetchAudioFile = async () => {
-      console.log("fetching audio file from url: ", url)
+      // console.log("fetching audio file from url: ", url)
 
       try {
         const s3 = new AWS.S3();

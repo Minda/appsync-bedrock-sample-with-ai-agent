@@ -20,6 +20,8 @@ const sendConversationMessageQuery = new GraphqlQuery<SendMessageResult>(`
                 actionRequested
                 actionResult
                 audioFileUrl
+                languageIn
+                languageOut
             }
         }
     }

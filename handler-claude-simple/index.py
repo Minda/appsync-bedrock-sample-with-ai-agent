@@ -154,8 +154,12 @@ def handler(event, context):
         #chatResponder.publish_agent_message(f"URL: {audio_url}")
 
         # Get the language in and language out TODO: from the event
-        language_in = "English"
-        language_out = "French"
+        # language_in = "English"
+        # language_out = "French"
+        language_in = event['userInput']['languageIn']
+        language_out = event['userInput']['languageOut']
+        logging.info(f"**>> LANGUAGE IN: {language_in}")
+        logging.info(f"**>> LANGUAGE OUT: {language_out}")
         tag = "Human: "
 
         # TRANSCRIPTION

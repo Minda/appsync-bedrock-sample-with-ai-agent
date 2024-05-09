@@ -12,6 +12,8 @@ type EventMessage @aws_iam @aws_cognito_user_pools {
     actionRequested: String
     actionResult: String
     audioFileUrl: String
+    languageIn: String
+    languageOut: String
 }
 
 input EventMessageInput @aws_cognito_user_pools {
@@ -58,6 +60,8 @@ input UserAction {
     actionRequested: String
     actionResult: String
     audioFileUrl: String
+    languageIn: String
+    languageOut: String
 }
 
 type Agent @aws_cognito_user_pools {

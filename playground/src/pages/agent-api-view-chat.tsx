@@ -8,6 +8,7 @@ import { AIAgentChatConnections } from "./agent-api-chat-connections"
 import { useAgentApiConversation } from "../apis/agent-api/hooks/useConversations"
 import { useAgentConversationMetadata, useResetAgentConversationMetadata } from "../apis/agent-api/hooks/useMetadata"
 import {AudioRecorder} from "../library/chat/audio-recorder";
+import { LanguageSelector } from "../library/chat/LanguageSelector";
 
 /*
 * Chat Dialog & Actions
@@ -24,8 +25,8 @@ export function AIAgentViewChat () {
     const submitMessage = useAgentApiSendMessage(chatId)
     useAgentApiSubscribeConversation(chatId)
 
-    const [languageIn, setLanguageIn] = useState("English");
-    const [languageOut, setLanguageOut] = useState("French");
+    const [langIn, setLanguageIn] = useState("English");
+    const [langOut, setLanguageOut] = useState("French");
 
     //TODO: Add a lanuage selector
     //https://ui.docs.amplify.aws/react/components/selectfield
@@ -41,13 +42,27 @@ export function AIAgentViewChat () {
         return <Loader/>
     }
 
+ const handleLanguageChange = (newLanguageIn: string, newLanguageOut: string) => {
+    console.log('Language In:', newLanguageIn);
+    console.log('Language Out:', newLanguageOut);
+    setLanguageIn(newLanguageIn);
+    setLanguageOut(newLanguageOut);
+  };
+
   const handleRecordingComplete = async (audioUrl: string) => {
       console.log('Handling the completed recording..');
-      // Update the UI or submit the message with the audio URL
+      console.log('Audio URL: ', audioUrl);
+      console.log('Language In: ', langIn);
+      console.log('Language Out: ', langOut);
+
       const chatString = ""+audioUrl;
-      // submitMessage({ message: 'first message', audioFileUrl: audioUrl });
-      // submitMessage({ message: 'second message', audioFileUrl: audioUrl });
-      submitMessage({ message: chatString, audioFileUrl: audioUrl });
+
+      submitMessage({
+          message: chatString,
+          audioFileUrl: audioUrl,
+          languageIn: langIn,
+          languageOut: langOut
+      });
     };
 
     /* ... other components */
@@ -59,36 +74,11 @@ export function AIAgentViewChat () {
                 </Container>
                 <Card>
                     <Flex direction={'row'} alignContent={'center'} >
-                        <View width={'50%'}>
-                            <SelectField
-                              label="Language In"
-                              value={languageIn}
-                              onChange={(e) => setLanguageIn(e.target.value)}
-                            >
-                                <option value="English">English</option>
-                                <option value="French">French</option>
-                                <option value="Spanish">Spanish</option>
-                                <option value="German">German</option>
-                                <option value="Italian">Italian</option>
-                                <option value="Ukrainian">Ukrainian</option>
-                            </SelectField>
-                            <SelectField
-                                label="Language Out"
-                                value={languageOut}
-                                onChange={(e) => setLanguageOut(e.target.value)}
-                            >
-                                <option value="English">English</option>
-                                <option value="French">French</option>
-                                <option value="Spanish">Spanish</option>
-                                <option value="German">German</option>
-                                <option value="Italian">Italian</option>
-                                <option value="Ukrainian">Ukrainian</option>
-                            </SelectField>
-                        </View>
+
                         <View >
                             <AudioRecorder onRecordingComplete={handleRecordingComplete}/>
                         </View>
-
+                        <LanguageSelector onLanguageChange={handleLanguageChange} />
 
                     </Flex>
                 </Card>
