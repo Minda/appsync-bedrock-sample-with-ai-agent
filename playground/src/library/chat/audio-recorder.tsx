@@ -42,7 +42,7 @@ const onStop = async (recordedBlob: { blobURL: React.SetStateAction<string>; blo
   try {
     const params = {
       Bucket: 'awsaudiouploads',
-      Key: `audio-${Date.now()}.webm`,
+      Key: `audio_uploads/audio-${Date.now()}.webm`,
       Body: recordedBlob.blob,
       ContentType: 'audio/webm',
       ACL: 'public-read',

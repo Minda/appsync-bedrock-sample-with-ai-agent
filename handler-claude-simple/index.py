@@ -3,98 +3,87 @@ from chatResponder import ChatResponder
 from botocore.config import Config
 from elevenlabs.client import ElevenLabs
 from elevenlabs import save
-import tempfile
+from botocore.exceptions import ClientError
 
 bedrock = boto3.client('bedrock-runtime', config=Config(region_name='us-east-1'))
 s3_client = boto3.client('s3', config=Config(region_name='us-east-1'))
-transcribe_client = boto3.client('transcribe', config=Config(region_name='us-east-1'))
+#transcribe_client = boto3.client('transcribe', config=Config(region_name='us-east-1'))
+runtime_client = boto3.client('sagemaker-runtime', config=Config(region_name='us-east-1'))
 logging.basicConfig(level=logging.INFO)
 logging.getLogger().setLevel(logging.INFO)
 
 def transcribe_audio(audio_url):
-    print("transcribe audio... ")
-    print("audio url", audio_url)
-    logging.info(f"audio url: {audio_url}")
+    print("Transcribe audio using Whisper model on SageMaker...")
+    print("Audio URL start:", audio_url)
+    logging.info(f"Audio URL: {audio_url}")
 
     # Extract the bucket and key from the audio URL
-    bucket, key = audio_url.replace("https://s3.amazonaws.com/", "").split("/", 1)
+    #bucket, key = audio_url.replace("https://s3.amazonaws.com/", "").split("/", 1)
+    bucket = 'awsaudiouploads'
+
+    key = audio_url.split('amazonaws.com/')[1]
+
+    #key = 'audio_uploads/test-audio.webm'
+    #file_name = 'test-audio.webm'
+
+    file_name = os.path.basename(audio_url)
 
     # Remove leading/trailing whitespace and single quotes from the audio URL
     audio_url = audio_url.strip().strip("'")
+    logging.info(f"Bucket: {bucket}")
+    logging.info(f"Key: {key}")
+    logging.info(f"File name: {file_name}")
 
-    bucket_name = 'awsaudiouploads'
-    #file_name = audio_url.split('/')[-1] #get the last element
-    #logging.info(f"file_name: {file_name}")
+    #role = "arn:aws:iam::908166648332:role/service-role/AmazonSageMaker-ExecutionRole-20240515T103026"
 
-    # deeplearning.io notebook version of file url
-    #media_file_uri = f's3://{bucket_name}/{file_name}'
-    #logging.info(f"bucket_name: {bucket_name}")
+    #s3_path = 's3://mindabucket/whisper/code/whisper-model.tar.gz'
 
-    #logging.info(f"media_file_uri: {media_file_uri}")
+    # Sagemaker runtime client
+    runtime_client = boto3.client('sagemaker-runtime')
 
-    # Generate a unique job name
-    job_name = f"transcribe-job-{int(time.time())}"
-    logging.info(f"job_name: {job_name}")
+    # Download audio file from s3
+    #s3 = boto3.client('s3')
 
-    # try:
-    # Start the transcription job
-    response = transcribe_client.start_transcription_job(
-        TranscriptionJobName=job_name,
-        Media={'MediaFileUri': audio_url},
-        #Media={'MediaFileUri': media_file_uri},
-        MediaFormat='webm',
-        LanguageCode='en-US',
-        OutputBucketName=bucket_name,  # specify the output bucket
-        OutputKey=f'{job_name}-transcript.json',
-        Settings={
-            'ShowSpeakerLabels': True,
-            'MaxSpeakerLabels': 2
-        }
+    #Check if the object exists in bucket
+    try:
+        response = s3_client.head_object(Bucket=bucket, Key=key)
+        logging.info(f"Response (head object): {response}")
+    except ClientError as e:
+        if e.response['Error']['Code'] == '403':
+            print("Error: Access denied. Check your IAM permissions and bucket policy.")
+        else:
+            print("Error:", e)
+
+    #Create a local path to download the audio file
+    local_audio_path = os.path.join('/tmp', file_name)
+    logging.info(f"Local audio path: {local_audio_path}")
+
+    #Download the audio file from S3
+    try:
+        s3_client.download_file(bucket, key, local_audio_path)
+    except Exception as e:
+        logging.info(f"Error downloading file from S3: {str(e)}")
+        raise
+
+    # Read the audio file
+    with open(local_audio_path, "rb") as f:
+        data = f.read()
+
+    logging.info(f'Data: {data}')
+
+    # Invoke endpoint with Sagemaker runtime client
+    response = runtime_client.invoke_endpoint(
+        EndpointName='huggingface-pytorch-inference-2024-05-22-17-41-26-525',  # Replace with your endpoint name
+        ContentType='audio/x-audio',
+        Body=data
     )
-    # except Exception as e:
-    #     print(f"Error occurred: {e}")
-    #     return {
-    #         'statusCode': 500,
-    #         'body': json.dumps(f"Error occurred: {e}")
-    #     }
-    #
-    # return {
-    #     'statusCode': 200,
-    #     'body': json.dumps(f"Submitted transcription job for {key} from bucket {bucket}.")
-    # }
 
-    # Wait for the transcription job to complete in an infinite loop
-    while True:
-        status = transcribe_client.get_transcription_job(TranscriptionJobName=job_name)
+    # Process the response and extract the transcription result
+    result = json.loads(response['Body'].read().decode())
+    transcribed_text = result['text']
 
-        # break when the status changes
-        if status['TranscriptionJob']['TranscriptionJobStatus'] in ['COMPLETED', 'FAILED']:
-            logging.info("job completed or failed")
-            break
-        time.sleep(5)
-
-    # Retrieve the transcript if the job completed successfully
-    if status['TranscriptionJob']['TranscriptionJobStatus'] == 'COMPLETED':
-        logging.info("Transcription job completed successfully")
-
-        # Get the uri from the status
-        transcript_file_uri = status['TranscriptionJob']['Transcript']['TranscriptFileUri']
-        logging.info(f"transcript file uri: {transcript_file_uri}")
-
-        # use the transcript file uri to get an object from s3 bucket
-        transcript_response = s3_client.get_object(Bucket='awsaudiouploads', Key=transcript_file_uri.split("/")[-1])
-
-        # load the json object from the response
-        transcript = json.loads(transcript_response['Body'].read().decode('utf-8'))
-        logging.info(f"transcript: {transcript}")
-
-        transcript_results = transcript['results']['transcripts'][0]['transcript']
-        logging.info(f"transcript results: {transcript_results}")
-
-        return transcript_results
-    else:
-        logging.error("Transcription job not completed successfully")
-        raise Exception("Transcription job failed.")
+    logging.info(f"Transcribed text: {transcribed_text}")
+    return transcribed_text
 
 def anthropic_bedrock (prompt):
 
