@@ -1,8 +1,9 @@
 import boto3, json, time, random, string, logging, os
 from chatResponder import ChatResponder
 from botocore.config import Config
-from elevenlabs.client import ElevenLabs
-from elevenlabs import save
+#from elevenlabs.client import ElevenLabs
+#from elevenlabs import save
+from deepgram import DeepgramClient, SpeakOptions
 from botocore.exceptions import ClientError
 
 bedrock = boto3.client('bedrock-runtime', config=Config(region_name='us-east-1'))
@@ -73,7 +74,7 @@ def transcribe_audio(audio_url):
 
     # Invoke endpoint with Sagemaker runtime client
     response = runtime_client.invoke_endpoint(
-        EndpointName='huggingface-pytorch-inference-2024-05-22-17-41-26-525',  # Replace with your endpoint name
+        EndpointName='huggingface-pytorch-inference-2024-05-29-20-18-51-073',  # Replace with your endpoint name
         ContentType='audio/x-audio',
         Body=data
     )
@@ -164,36 +165,60 @@ def handler(event, context):
         logging.info(f"prompt string: {prompt_string}")
 
         # Forward the transcribed text to Anthropic Bedrock
-        response = anthropic_bedrock(prompt_string)
-        logging.info(f"response from anthropic bedrock: {response}")
+        transcribed_text = anthropic_bedrock(prompt_string)
+        logging.info(f"response from anthropic bedrock: {transcribed_text}")
 
         # Generate audio from the response from Anthropic Bedrock
-        client = ElevenLabs(api_key="26b568cd9804dc5c637bf7176bda54b7")
-        audio = client.generate(
-            text=response,
-            voice="Arnold",
-            model='eleven_multilingual_v2'
-        )
+        DEEPGRAM_API_KEY = '1de775fcceda2010217372f1e57ca0dd3c9226a6'
+        model = "aura-asteria-en"
+        audio_folder = '/tmp'
+        if not os.path.exists(audio_folder):
+            os.makedirs(audio_folder)
 
         audio_file_name = f"{makeUniqueKey()}.mp3"
         audio_file_path = os.path.join('/tmp', audio_file_name)
         logging.info(f"audio file name: {audio_file_name}")
         logging.info(f"audio file path: {audio_file_path}")
+        # logging.info(f"text to generate voice for: {transcribed_text}")
 
-        #Save the audio to a file
-        save(audio, audio_file_path)
+        try:
+            deepgram = DeepgramClient(DEEPGRAM_API_KEY)
+
+            options = SpeakOptions(model=model)
+
+            # generated_audio = deepgram.speak.v("1").save(audio_file_path, transcribed_text, options)
+            deepgram.speak.v("1").save(audio_file_path, {"text": transcribed_text}, options)
+            # transcribed_text_josn = generated_audio.to_json(indent=4)
+            # logging.info(f"transcribed text json: {transcribed_text_josn}")
+
+        except Exception as e:
+            logging.info(f"Exception: {e}")
 
         #Upload the audio to S3
         bucket_name = 'awsaudiouploads'
-        audio_key = f'audio/{audio_file_name}'
+        audio_key = f'deepgram_audio/{audio_file_name}'
         logging.info(f"audio_key: {audio_key}")
 
-        s3_client.upload_file(audio_file_path, bucket_name, audio_key)
+        if os.path.exists(audio_file_path):
+            # Upload the file to S3
+            try:
+                # Upload the file to S3
+                s3_client.upload_file(audio_file_path, bucket_name, audio_key)
+                logging.info(f"deepgram audio uploaded to: {audio_url}")
+            except Exception as e:
+                # Handle the upload error
+                logging.error(f"Error uploading file to S3: {str(e)}")
+                raise e
+        else:
+            # Handle the file not found error
+            logging.error(f"Audio file not found: {audio_file_path}")
+            raise FileNotFoundError(f"Audio file not found: {audio_file_path}")
+
+
         audio_url = f'https://{bucket_name}.s3.amazonaws.com/{audio_key}'
-        logging.info(f"audio_url: {audio_url}")
 
         chatResponder.publish_agent_message(
-            response, audio_url
+            transcribed_text, audio_url
         )
 
     except Exception as e:
