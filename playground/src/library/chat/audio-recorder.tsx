@@ -59,11 +59,7 @@ const onStop = async (recordedBlob: { blobURL: React.SetStateAction<string>; blo
 
   return (
     <div>
-      <Grid
-      templateColumns="1fr 1fr 1fr"
-      templateRows="4rem"
-      gap={tokens.space.small}
-      >
+
         <View>
             <Button id="record-btn"
                     onClick={handleRecording}
@@ -81,10 +77,6 @@ const onStop = async (recordedBlob: { blobURL: React.SetStateAction<string>; blo
             strokeColor="#000000"
             backgroundColor="rgb(4, 125, 149)" />
         </View>
-        <View className={'hidden'}>
-          {audioBlobUrl && <audio src={audioBlobUrl} controls />}
-        </View>
-      </Grid>
     </div>
   );
 }

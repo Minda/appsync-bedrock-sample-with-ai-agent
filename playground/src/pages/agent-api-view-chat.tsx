@@ -69,16 +69,16 @@ export function AIAgentViewChat () {
     return (
         <Flex>
             <View width={900}>
-                <Container heading={`Chatting with '${agentObject.value.name}'`} minHeight={500} padBody={0}>
+                <Container heading={`Translation`} minHeight={500} padBody={0}>
                     <ChatRendered/>
                 </Container>
-                <Card>
-                    <Flex direction={'row'} alignContent={'center'} >
+                <Card justify-content="center">
+                    <Flex direction={'row'} alignContent={'center'} justify-content="center" >
 
                         <View >
                             <AudioRecorder onRecordingComplete={handleRecordingComplete}/>
                         </View>
-                        <LanguageSelector onLanguageChange={handleLanguageChange} />
+
 
                     </Flex>
                 </Card>
@@ -90,6 +90,7 @@ export function AIAgentViewChat () {
                     {
                         !conversationMetadata.responding && <TextAreaField
                             labelHidden
+                            className={'hidden'}
                             label="Message"
                             placeholder="Type your message here"
                             onKeyDown={(e) => {
@@ -108,7 +109,9 @@ export function AIAgentViewChat () {
                 </Card>
             </View>
             <View width={300}>
-                <AIAgentChatConnections/>
+                <Container heading="Language">
+                    <LanguageSelector onLanguageChange={handleLanguageChange} />
+                </Container>
             </View>
         </Flex>
     )

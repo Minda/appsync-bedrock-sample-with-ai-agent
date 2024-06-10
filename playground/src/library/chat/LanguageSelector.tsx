@@ -21,7 +21,7 @@ export function LanguageSelector({ onLanguageChange }: LanguageSelectorProps) {
   };
 
   return (
-    <View width={'50%'}>
+    <View>
       <SelectField
         label="Language In"
         value={languageIn}
