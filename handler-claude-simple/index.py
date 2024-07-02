@@ -1,17 +1,17 @@
 import boto3, json, time, random, string, logging, os
 from chatResponder import ChatResponder
 from botocore.config import Config
-#from elevenlabs.client import ElevenLabs
-#from elevenlabs import save
+# from elevenlabs.client import ElevenLabs
+# from elevenlabs import save
 from deepgram import DeepgramClient, SpeakOptions
 from botocore.exceptions import ClientError
 
-bedrock = boto3.client('bedrock-runtime', config=Config(region_name='us-east-1'))
 s3_client = boto3.client('s3', config=Config(region_name='us-east-1'))
-#transcribe_client = boto3.client('transcribe', config=Config(region_name='us-east-1'))
+# transcribe_client = boto3.client('transcribe', config=Config(region_name='us-east-1'))
 runtime_client = boto3.client('sagemaker-runtime', config=Config(region_name='us-east-1'))
 logging.basicConfig(level=logging.INFO)
 logging.getLogger().setLevel(logging.INFO)
+
 
 def transcribe_audio(audio_url):
     print("Transcribe audio using Whisper model on SageMaker...")
@@ -19,13 +19,13 @@ def transcribe_audio(audio_url):
     logging.info(f"Audio URL: {audio_url}")
 
     # Extract the bucket and key from the audio URL
-    #bucket, key = audio_url.replace("https://s3.amazonaws.com/", "").split("/", 1)
+    # bucket, key = audio_url.replace("https://s3.amazonaws.com/", "").split("/", 1)
     bucket = 'awsaudiouploads'
 
     key = audio_url.split('amazonaws.com/')[1]
 
-    #key = 'audio_uploads/test-audio.webm'
-    #file_name = 'test-audio.webm'
+    # key = 'audio_uploads/test-audio.webm'
+    # file_name = 'test-audio.webm'
 
     file_name = os.path.basename(audio_url)
 
@@ -35,17 +35,17 @@ def transcribe_audio(audio_url):
     logging.info(f"Key: {key}")
     logging.info(f"File name: {file_name}")
 
-    #role = "arn:aws:iam::908166648332:role/service-role/AmazonSageMaker-ExecutionRole-20240515T103026"
+    # role = "arn:aws:iam::908166648332:role/service-role/AmazonSageMaker-ExecutionRole-20240515T103026"
 
-    #s3_path = 's3://mindabucket/whisper/code/whisper-model.tar.gz'
+    # s3_path = 's3://mindabucket/whisper/code/whisper-model.tar.gz'
 
     # Sagemaker runtime client
     runtime_client = boto3.client('sagemaker-runtime')
 
     # Download audio file from s3
-    #s3 = boto3.client('s3')
+    # s3 = boto3.client('s3')
 
-    #Check if the object exists in bucket
+    # Check if the object exists in bucket
     try:
         response = s3_client.head_object(Bucket=bucket, Key=key)
         logging.info(f"Response (head object): {response}")
@@ -55,11 +55,11 @@ def transcribe_audio(audio_url):
         else:
             print("Error:", e)
 
-    #Create a local path to download the audio file
+    # Create a local path to download the audio file
     local_audio_path = os.path.join('/tmp', file_name)
     logging.info(f"Local audio path: {local_audio_path}")
 
-    #Download the audio file from S3
+    # Download the audio file from S3
     try:
         s3_client.download_file(bucket, key, local_audio_path)
     except Exception as e:
@@ -70,11 +70,11 @@ def transcribe_audio(audio_url):
     with open(local_audio_path, "rb") as f:
         data = f.read()
 
-    logging.info(f'Data: {data}')
+    # logging.info(f'Found Data: {data != None
 
     # Invoke endpoint with Sagemaker runtime client
     response = runtime_client.invoke_endpoint(
-        EndpointName='huggingface-pytorch-inference-2024-05-29-20-18-51-073',  # Replace with your endpoint name
+        EndpointName='huggingface-pytorch-inference-2024-07-02-18-04-55-983',  # Replace with your endpoint name
         ContentType='audio/x-audio',
         Body=data
     )
@@ -86,25 +86,50 @@ def transcribe_audio(audio_url):
     logging.info(f"Transcribed text: {transcribed_text}")
     return transcribed_text
 
-def anthropic_bedrock (prompt):
+
+def anthropic_bedrock(prompt):
+    connect_timeout = 5
+    read_timeout = 60
+
+    config = Config(
+        connect_timeout=connect_timeout,
+        read_timeout=read_timeout,
+        retries={'max_attempts': 3},
+        region_name='us-east-1'
+    )
+
+    bedrock = boto3.client('bedrock-runtime', config=config)
+
+    modelId = 'anthropic.claude-v2'
+    accept = 'application/json'
+    contentType = 'application/json'
 
     response = bedrock.invoke_model(
         body=json.dumps({
             "prompt": prompt + "\nAssistant: ",
-            "max_tokens_to_sample":500,
-            "temperature":0,
-            "top_k":250,
-            "top_p":0.999,
-            "stop_sequences":[],
-            "anthropic_version":"bedrock-2023-05-31",
+            "max_tokens_to_sample": 500,
+            "temperature": 0,
+            "top_k": 250,
+            "top_p": 0.999,
+            "stop_sequences": [],
+            "anthropic_version": "bedrock-2023-05-31",
         }),
-        modelId='anthropic.claude-v2'
+        modelId=modelId,
+        accept=accept,
+        contentType=contentType
     )
 
-    raw_body = response['body'].read().decode("utf-8")
-    response_json = json.loads(raw_body)
-    
-    return (([*response_json.values()][0]))
+    logging.info(f"Anthropic Bedrock response: {response}")
+    # raw_body = response['body'].read().decode("utf-8")
+    # response_json = json.loads(raw_body)
+    #
+    # return (([*response_json.values()][0]))
+
+    response_body = json.loads(response.get('body').read())
+    completion = response_body.get('completion')
+    logging.info(completion)
+    return completion
+
 
 def makeUniqueKey():
     timestamp = int(time.time())
@@ -112,6 +137,7 @@ def makeUniqueKey():
     return f"{timestamp}_{random_string}"
     # timestamp = int(time.time())
     # random_string = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
+
 
 def getLanguagePrompt(language_in, language_out, transcribed_text):
     lang_prompt = f'''You will be acting as a professional interpreter.
@@ -126,10 +152,10 @@ def getLanguagePrompt(language_in, language_out, transcribed_text):
             '''
     return lang_prompt
 
-def handler(event, context):
 
+def handler(event, context):
     # Setup ability to Respond to chat
-    chatResponder = ChatResponder(event['conversationData']['id'])    
+    chatResponder = ChatResponder(event['conversationData']['id'])
 
     try:
         logging.info(event)
@@ -141,7 +167,7 @@ def handler(event, context):
         # Get the audio URL from the event
         audio_url = event['userInput']['audioFileUrl']
         logging.info(f"**>> URL: {audio_url}")
-        #chatResponder.publish_agent_message(f"URL: {audio_url}")
+        # chatResponder.publish_agent_message(f"URL: {audio_url}")
 
         # Get the language in and language out TODO: from the event
         # language_in = "English"
@@ -156,11 +182,11 @@ def handler(event, context):
         # Transcribe the audio using Amazon Transcribe
         transcribed_text = transcribe_audio(audio_url.replace(tag, ""))
         logging.info(f"transcribed text: {transcribed_text}")
-        chatResponder.publish_agent_message( #TODO: save in database with agent as a "human"
+        chatResponder.publish_agent_message(  # TODO: save in database with agent as a "human"
             transcribed_text, audio_url
         )
 
-        #TRANSLATION
+        # TRANSLATION
         prompt_string = "Human: " + getLanguagePrompt(language_in, language_out, transcribed_text)
         logging.info(f"prompt string: {prompt_string}")
 
@@ -194,7 +220,7 @@ def handler(event, context):
         except Exception as e:
             logging.info(f"Exception: {e}")
 
-        #Upload the audio to S3
+        # Upload the audio to S3
         bucket_name = 'awsaudiouploads'
         audio_key = f'deepgram_audio/{audio_file_name}'
         logging.info(f"audio_key: {audio_key}")
@@ -214,7 +240,6 @@ def handler(event, context):
             logging.error(f"Audio file not found: {audio_file_path}")
             raise FileNotFoundError(f"Audio file not found: {audio_file_path}")
 
-
         audio_url = f'https://{bucket_name}.s3.amazonaws.com/{audio_key}'
 
         chatResponder.publish_agent_message(
@@ -225,7 +250,6 @@ def handler(event, context):
         logging.exception("handler: An error occurred")
         print(f"Error from handler: {str(e)}")
         chatResponder.publish_agent_message("Sorry, an error occurred while processing your request.")
-
 
     # Mark metadata as done responding
     chatResponder.publish_agent_stop_responding()
