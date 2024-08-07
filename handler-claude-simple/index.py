@@ -74,7 +74,7 @@ def transcribe_audio(audio_url):
 
     # Invoke endpoint with Sagemaker runtime client
     response = runtime_client.invoke_endpoint(
-        EndpointName='huggingface-pytorch-inference-2024-07-02-18-04-55-983',  # Replace with your endpoint name
+        EndpointName='huggingface-pytorch-inference-2024-08-09-17-41-35-821',  # Replace with your endpoint name
         ContentType='audio/x-audio',
         Body=data
     )
@@ -161,7 +161,7 @@ def handler(event, context):
         logging.info(event)
 
         # Get the chat message from the event
-        chat_string = event['chatString']
+        chat_string = event['chatString'] # ?? We are getting the chat string from the event and not the userInput??
         logging.info(f"**>> CHAT MESSAGE: {chat_string}")
 
         # Get the audio URL from the event
@@ -195,8 +195,9 @@ def handler(event, context):
         logging.info(f"response from anthropic bedrock: {transcribed_text}")
 
         # Generate audio from the response from Anthropic Bedrock
+        # https://developers.deepgram.com/docs/tts-models for voice selection
         DEEPGRAM_API_KEY = '1de775fcceda2010217372f1e57ca0dd3c9226a6'
-        model = "aura-asteria-en"
+        model = "aura-angus-en"
         audio_folder = '/tmp'
         if not os.path.exists(audio_folder):
             os.makedirs(audio_folder)

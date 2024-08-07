@@ -1,24 +1,28 @@
-// LanguageSelector.tsx
+import React, { useEffect } from "react";
 import { SelectField, View } from "@aws-amplify/ui-react";
-import { useState } from "react";
 
 interface LanguageSelectorProps {
+  languageIn: string;
+  languageOut: string;
   onLanguageChange: (languageIn: string, languageOut: string) => void;
 }
 
-export function LanguageSelector({ onLanguageChange }: LanguageSelectorProps) {
-  const [languageIn, setLanguageIn] = useState("English");
-  const [languageOut, setLanguageOut] = useState("French");
+export function LanguageSelector({ languageIn, languageOut, onLanguageChange }: LanguageSelectorProps) {
+  useEffect(() => {
+    console.log('LanguageSelector mounted/updated - In:', languageIn, 'Out:', languageOut);
+  }, [languageIn, languageOut]);
 
-  const handleLanguageInChange = (language: string) => {
-    setLanguageIn(language);
-    onLanguageChange(language, languageOut);
+  const handleLanguageInChange = (newLanguageIn: string) => {
+    console.log('handleLanguageInChange called with:', newLanguageIn);
+    onLanguageChange(newLanguageIn, languageOut);
   };
 
-  const handleLanguageOutChange = (language: string) => {
-    setLanguageOut(language);
-    onLanguageChange(languageIn, language);
+  const handleLanguageOutChange = (newLanguageOut: string) => {
+    console.log('handleLanguageOutChange called with:', newLanguageOut);
+    onLanguageChange(languageIn, newLanguageOut);
   };
+
+  console.log('LanguageSelector rendering - In:', languageIn, 'Out:', languageOut);
 
   return (
     <View>

@@ -40,7 +40,7 @@ export function UserChatError (props: ChatItemProps) {
 
 export function AgentChatMessage (props: ChatItemProps) {
   // const url = extractUrl(props.text);
-  console.log("event of id ", props.event.id,": ", props.event.event)
+  // console.log("event of id ", props.event.id,": ", props.event.event)
   const url = props.event.event.audioFileUrl ?? "";
   // console.log("audio file url from props: ", url)
   const [audioUrl, setAudioUrl] = useState<string | "">("");

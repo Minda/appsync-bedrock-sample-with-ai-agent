@@ -16,7 +16,7 @@ export function AIAgentSidebar () {
     const createConversation = useAgentApiCreateConversation()
     //const selectedAgent = useState<string>('')
     const nav = useNavigate()
-    console.log(agentObjectList)
+    // console.log(agentObjectList)
 
     if (conversationsObject.isUnloaded() || !conversationsObject.value || agentObjectList.isUnloaded() || !agentObjectList.value) {
         return <Loader/>

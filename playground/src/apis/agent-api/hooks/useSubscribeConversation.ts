@@ -6,7 +6,7 @@ import { ConversationEvent, ConversationMetadata } from "../types";
 
 export function subscribeConversationMessages(conversationId: string): any {
 
-    console.log('Subscribed', 'subscribeConversationMessages')
+    // console.log('Subscribed', 'subscribeConversationMessages')
 
     const query = `
         subscription MySubscription($cid: ID!) {

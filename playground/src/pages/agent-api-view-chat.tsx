@@ -1,71 +1,72 @@
-import { useParams } from "react-router-dom"
-import { useAgentApiAgent, useAgentApiSendMessage, useAgentApiSubscribeConversation } from "../apis/agent-api"
-import { Loader, TextAreaField, View, Flex, Card, SelectField } from "@aws-amplify/ui-react" //ui.docs.amplify.aws/react
-import { Container } from "../library/container"
-import { ChatRendered } from "../library/chat/chat-rendered"
-import { useEffect, useState } from "react"
-import { AIAgentChatConnections } from "./agent-api-chat-connections"
-import { useAgentApiConversation } from "../apis/agent-api/hooks/useConversations"
-import { useAgentConversationMetadata, useResetAgentConversationMetadata } from "../apis/agent-api/hooks/useMetadata"
-import {AudioRecorder} from "../library/chat/audio-recorder";
-import { LanguageSelector } from "../library/chat/LanguageSelector";
+import React, { useEffect, useState, useCallback, useRef } from "react";
+import { useParams } from "react-router-dom";
+import { useAgentApiAgent, useAgentApiSendMessage, useAgentApiSubscribeConversation } from "../apis/agent-api";
+import { Loader, TextAreaField, View, Flex, Card } from "@aws-amplify/ui-react";
+import { Container } from "../library/container";
+import { ChatRendered } from "../library/chat/chat-rendered";
+import { useAgentApiConversation } from "../apis/agent-api/hooks/useConversations";
+import { useAgentConversationMetadata, useResetAgentConversationMetadata } from "../apis/agent-api/hooks/useMetadata";
+import { AudioRecorder } from "../library/chat/audio-recorder";
+import { LanguageSelector } from "../library/chat/language-selector";
 
-/*
-* Chat Dialog & Actions
-* */
+export function AIAgentViewChat() {
+    const { chatId } = useParams();
+    const conversationObject = useAgentApiConversation(chatId);
+    const agentObject = useAgentApiAgent(conversationObject.value?.agent);
+    const [chatString, setChatString] = useState<string>("");
+    const conversationMetadata = useAgentConversationMetadata();
+    const resetMetadata = useResetAgentConversationMetadata();
+    const submitMessage = useAgentApiSendMessage(chatId);
+    useAgentApiSubscribeConversation(chatId);
 
-export function AIAgentViewChat () {
-    
-    const {chatId} = useParams()
-    const conversationObject = useAgentApiConversation(chatId)
-    const agentObject = useAgentApiAgent(conversationObject.value?.agent)
-    const [chatString, setChatString] = useState<string>()
-    const conversationMetadata = useAgentConversationMetadata()
-    const resetMetadata = useResetAgentConversationMetadata()
-    const submitMessage = useAgentApiSendMessage(chatId)
-    useAgentApiSubscribeConversation(chatId)
+    const [languageIn, setLanguageIn] = useState("English");
+    const [languageOut, setLanguageOut] = useState("French");
 
-    const [langIn, setLanguageIn] = useState("English");
-    const [langOut, setLanguageOut] = useState("French");
+    // Use refs to store the latest language values
+    const languageInRef = useRef(languageIn);
+    const languageOutRef = useRef(languageOut);
 
-    //TODO: Add a lanuage selector
-    //https://ui.docs.amplify.aws/react/components/selectfield
+    const handleLanguageChange = useCallback((newLanguageIn: string, newLanguageOut: string) => {
+        console.log('handleLanguageChange called with:', newLanguageIn, newLanguageOut);
+        setLanguageIn(newLanguageIn);
+        setLanguageOut(newLanguageOut);
+        // Update refs
+        languageInRef.current = newLanguageIn;
+        languageOutRef.current = newLanguageOut;
+    }, []);
 
-    //@ts-nocheck
+    const handleRecordingComplete = useCallback(async (audioUrl: string) => {
+        console.log('Handling the completed recording..');
+        console.log('Audio URL:', audioUrl);
+        console.log('Language In:', languageInRef.current);
+        console.log('Language Out:', languageOutRef.current);
+
+        submitMessage({
+            message: audioUrl,
+            audioFileUrl: audioUrl,
+            languageIn: languageInRef.current,
+            languageOut: languageOutRef.current
+        });
+    }, [submitMessage]);
+
+    useEffect(() => {
+        console.log('AIAgentViewChat - languageIn:', languageIn, 'languageOut:', languageOut);
+        // Update refs when state changes
+        languageInRef.current = languageIn;
+        languageOutRef.current = languageOut;
+    }, [languageIn, languageOut]);
+
     useEffect(() => {
         if (conversationMetadata.partialMessage && !conversationMetadata.responding) {
-            resetMetadata()
+            resetMetadata();
         }
-    }, [chatId, resetMetadata, conversationMetadata])
+    }, [chatId, resetMetadata, conversationMetadata]);
 
     if (conversationObject.isUnloaded() || !conversationObject.value || agentObject.isUnloaded() || !agentObject.value) {
-        return <Loader/>
+        return <Loader />;
     }
 
- const handleLanguageChange = (newLanguageIn: string, newLanguageOut: string) => {
-    console.log('Language In:', newLanguageIn);
-    console.log('Language Out:', newLanguageOut);
-    setLanguageIn(newLanguageIn);
-    setLanguageOut(newLanguageOut);
-  };
 
-  const handleRecordingComplete = async (audioUrl: string) => {
-      console.log('Handling the completed recording..');
-      console.log('Audio URL: ', audioUrl);
-      console.log('Language In: ', langIn);
-      console.log('Language Out: ', langOut);
-
-      const chatString = ""+audioUrl;
-
-      submitMessage({
-          message: chatString,
-          audioFileUrl: audioUrl,
-          languageIn: langIn,
-          languageOut: langOut
-      });
-    };
-
-    /* ... other components */
     return (
         <Flex>
             <View width={900}>
@@ -103,14 +104,18 @@ export function AIAgentViewChat () {
                             value={chatString}
                             onChange={(e) => {
                                 setChatString(e.target.value)
-                            }} 
+                            }}
                         />
                     }
                 </Card>
             </View>
             <View width={300}>
                 <Container heading="Language">
-                    <LanguageSelector onLanguageChange={handleLanguageChange} />
+                  <LanguageSelector
+                    languageIn={languageIn}
+                    languageOut={languageOut}
+                    onLanguageChange={handleLanguageChange}
+                  />
                 </Container>
             </View>
         </Flex>
