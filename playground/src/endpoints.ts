@@ -6,14 +6,6 @@ export const cognitoConfig = {
   userPoolWebClientId: process.env.REACT_APP_COGNITOCLIENT as string,
 };
 
-export const awsConfig = {
-  Auth: cognitoConfig,
-  Storage: {
-    bucket: 'aws-audio-recordings',
-    region: process.env.REACT_APP_REGION as string,
-  },
-};
-
 export const fmHandlerArns = [
 	{
 		label: 'simple',

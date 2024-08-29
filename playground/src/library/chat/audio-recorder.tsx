@@ -31,10 +31,6 @@ export function AudioRecorder({ onRecordingComplete }: AudioRecorderProps) {
     setIsRecording(false);
   };
 
-  const onData = (recordedBlob: any) => {
-    //console.log('chunk of real-time data is: ', recordedBlob);
-  };
-
 const onStop = async (recordedBlob: { blobURL: React.SetStateAction<string>; blob: Blob }) => {
   console.log('recordedBlob is: ', recordedBlob);
   setAudioBlobUrl(recordedBlob.blobURL);
@@ -73,7 +69,6 @@ const onStop = async (recordedBlob: { blobURL: React.SetStateAction<string>; blo
             record={isRecording}
             className={'hidden'}
             onStop={onStop}
-            onData={onData}
             strokeColor="#000000"
             backgroundColor="rgb(4, 125, 149)" />
         </View>

@@ -79,7 +79,6 @@ class ChatResponder:
 
     def publish_agent_message(self, message, url=None):
         logging.info(f">> Publish agent message: {message}")
-        # logging.info(f"------>message: {data.message}")
         logging.info(f"------>audioFileUrl:{url}")
 
         self._send_notification('agent', {

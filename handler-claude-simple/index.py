@@ -87,7 +87,7 @@ def transcribe_audio(audio_url):
     return transcribed_text
 
 
-def anthropic_bedrock(prompt):
+def call_anthropic_bedrock(prompt):
     connect_timeout = 5
     read_timeout = 60
 
@@ -120,10 +120,6 @@ def anthropic_bedrock(prompt):
     )
 
     logging.info(f"Anthropic Bedrock response: {response}")
-    # raw_body = response['body'].read().decode("utf-8")
-    # response_json = json.loads(raw_body)
-    #
-    # return (([*response_json.values()][0]))
 
     response_body = json.loads(response.get('body').read())
     completion = response_body.get('completion')
@@ -167,7 +163,6 @@ def handler(event, context):
         # Get the audio URL from the event
         audio_url = event['userInput']['audioFileUrl']
         logging.info(f"**>> URL: {audio_url}")
-        # chatResponder.publish_agent_message(f"URL: {audio_url}")
 
         # Get the language in and language out TODO: from the event
         # language_in = "English"
@@ -191,7 +186,7 @@ def handler(event, context):
         logging.info(f"prompt string: {prompt_string}")
 
         # Forward the transcribed text to Anthropic Bedrock
-        transcribed_text = anthropic_bedrock(prompt_string)
+        transcribed_text = call_anthropic_bedrock(prompt_string)
         logging.info(f"response from anthropic bedrock: {transcribed_text}")
 
         # Generate audio from the response from Anthropic Bedrock
