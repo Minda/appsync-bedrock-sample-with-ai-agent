@@ -1,8 +1,9 @@
 import { AgentApiConversationListed } from "../library/chat/conversation-listed"
 import { Outlet, useNavigate } from "react-router-dom"
-import { useAgentApiAgentList, useAgentApiConversationList } from "../apis/agent-api"
+import {useAgentApiAgentList, useAgentApiConversationList, useAgentApiCreateConversation} from "../apis/agent-api"
 import { Button, Flex, Loader, View } from "@aws-amplify/ui-react"
 import { Container } from "../library/container"
+import {useState} from "react";
 
 /*
 * Renders conversational history
@@ -12,8 +13,10 @@ export function AIAgentSidebar () {
     
     const conversationsObject = useAgentApiConversationList()
     const agentObjectList = useAgentApiAgentList()
-
+    const createConversation = useAgentApiCreateConversation()
+    //const selectedAgent = useState<string>('')
     const nav = useNavigate()
+    // console.log(agentObjectList)
 
     if (conversationsObject.isUnloaded() || !conversationsObject.value || agentObjectList.isUnloaded() || !agentObjectList.value) {
         return <Loader/>
@@ -28,6 +31,17 @@ export function AIAgentSidebar () {
                 key={conversation.id}/>
         )    
 
+    let onCreate = () => {
+
+        console.log(agentObjectList)
+        // if (agentObjectList.value) {
+        //     console.log(agentObjectList.value[0].id)
+        //     createConversation(agentObjectList.value[0].id)
+        //         .then(c => nav('/chat/view/' + c.createConversation.id))
+        // }
+        // createConversation(selectedAgent)
+        //     .then(c => nav('/chat/view/' + c.createConversation.id))
+    }
     return (
         <View>
             <View className="sidebar">
@@ -36,6 +50,9 @@ export function AIAgentSidebar () {
                         {conversationsRendered}
                     </Flex>
                     <br/>
+                    {/*<Button isFullWidth onClick={onCreate}>*/}
+                    {/*    Translation*/}
+                    {/*</Button>*/}
                     <Button isFullWidth onClick={() => nav("/chat/new")}>
                         New Conversation
                     </Button>

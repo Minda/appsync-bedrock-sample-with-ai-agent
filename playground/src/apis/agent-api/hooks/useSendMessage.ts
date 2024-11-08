@@ -20,6 +20,8 @@ const sendConversationMessageQuery = new GraphqlQuery<SendMessageResult>(`
                 actionRequested
                 actionResult
                 audioFileUrl
+                languageIn
+                languageOut
             }
         }
     }
@@ -33,6 +35,9 @@ export function useAgentApiSendMessage (cid: string = '') {
         sendConversationMessageQuery.invoke({cid, event})
             .then(result => {
                 setConversationEvents((data) => {
+
+                    console.log('useAgentApiSendMessage with conversation id=', cid)
+                    console.log("event: ", event)
 
                     let targetConversationEvents = data[cid]
                     if (!targetConversationEvents || targetConversationEvents.loading !== 'loaded'){

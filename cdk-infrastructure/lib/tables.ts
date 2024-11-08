@@ -3,10 +3,6 @@ import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 
 import { Construct } from 'constructs';
 
-/*
-* ...
-* */
-
 export function buildTables (scope: Construct) {
 
 	// Audio table - for the list of audio recordings

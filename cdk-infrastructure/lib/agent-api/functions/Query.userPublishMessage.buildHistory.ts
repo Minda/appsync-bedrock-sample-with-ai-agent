@@ -57,9 +57,12 @@ export function request(ctx: Context) {
         })
     }
 
+    console.log("build chat string")
+
     // Chat string being built
     let chatString = ''
 
+    // Builds up chat string from chat history
     for (let chatEvent of chatHistory){
         let sender = chatEvent.sender === 'user' ? USER_PREFIX : AGENT_PREFIX
         chatString += sender + chatEvent.text + '\n'
@@ -74,6 +77,8 @@ export function request(ctx: Context) {
         chatString = USER_PREFIX + "\n" + chatString
 
     ctx.stash.chatString = chatString
+
+    console.log("chat string built: ", chatString)
     return {}
 }
 

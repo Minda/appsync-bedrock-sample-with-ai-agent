@@ -1,7 +1,7 @@
 from gql import Client, gql
 from gql.transport.requests import RequestsHTTPTransport
 from requests_aws4auth import AWS4Auth
-import os, boto3
+import os, boto3, logging
 
 class ChatResponder:
 
@@ -39,6 +39,7 @@ class ChatResponder:
                         actionResult
                         innerDialog
                         message
+                        audioFileUrl
                     }
                 }
             }
@@ -76,9 +77,13 @@ class ChatResponder:
 
         self.client.execute(defaultQuery, variable_values=variables)
 
-    def publish_agent_message(self, data):
+    def publish_agent_message(self, message, url=None):
+        logging.info(f">> Publish agent message: {message}")
+        logging.info(f"------>audioFileUrl:{url}")
+
         self._send_notification('agent', {
-            'message': data,
+            'message': message,
+            'audioFileUrl': url,
         })
 
     def publish_agent_start_responding(self):

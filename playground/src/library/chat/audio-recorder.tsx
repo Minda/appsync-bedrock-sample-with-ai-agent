@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { Button, Icon, View, Grid, useTheme } from '@aws-amplify/ui-react';
 import { ReactMic } from 'react-mic';
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import AWS from '../../aws-config';
+
+const s3 = new AWS.S3();
 
 interface AudioRecorderProps {
-  onRecordingComplete: (audioFileUrl: string) => void;
+  onRecordingComplete: (audioUrl: string) => void;
 }
 
 export function AudioRecorder({ onRecordingComplete }: AudioRecorderProps) {
@@ -53,25 +55,31 @@ const uploadAudioToS3 = async (audioBlob: Blob) => {
     setIsRecording(false);
   };
 
-  const onData = (recordedBlob: any) => {
-    console.log('chunk of real-time data is: ', recordedBlob);
-  };
+const onStop = async (recordedBlob: { blobURL: React.SetStateAction<string>; blob: Blob }) => {
+  console.log('recordedBlob is: ', recordedBlob);
+  setAudioBlobUrl(recordedBlob.blobURL);
 
-  const onStop = (recordedBlob: { blobURL: React.SetStateAction<string>; blob: Blob }) => {
-    console.log('recordedBlob is: ', recordedBlob);
-    setAudioBlobUrl(recordedBlob.blobURL);
-    uploadAudioToS3(recordedBlob.blob); // Call the upload function
-  };
+  try {
+    const params = {
+      Bucket: 'awsaudiouploads',
+      Key: `audio_uploads/audio-${Date.now()}.webm`,
+      Body: recordedBlob.blob,
+      ContentType: 'audio/webm',
+      ACL: 'public-read',
+    };
 
+    const { Location } = await s3.upload(params).promise();
+    console.log('Audiorecorder: audio uploaded successfully to:', Location);
+    onRecordingComplete(Location);
+  } catch (error) {
+    console.error('Error uploading audio:', error);
+  }
+};
   const { tokens } = useTheme();
 
   return (
     <div>
-      <Grid
-      templateColumns="1fr 1fr 1fr"
-      templateRows="4rem"
-      gap={tokens.space.small}
-      >
+
         <View>
             <Button id="record-btn"
                     onClick={handleRecording}
@@ -85,14 +93,9 @@ const uploadAudioToS3 = async (audioBlob: Blob) => {
             record={isRecording}
             className={'hidden'}
             onStop={onStop}
-            onData={onData}
             strokeColor="#000000"
             backgroundColor="rgb(4, 125, 149)" />
         </View>
-        <View>
-          {audioBlobUrl && <audio src={audioBlobUrl} controls />}
-        </View>
-      </Grid>
     </div>
   );
 }

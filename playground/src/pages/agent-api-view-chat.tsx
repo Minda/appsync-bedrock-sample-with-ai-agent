@@ -1,92 +1,102 @@
-import { useParams } from "react-router-dom"
-import { useAgentApiAgent, useAgentApiSendMessage, useAgentApiSubscribeConversation } from "../apis/agent-api"
-import { Loader, TextAreaField, View, Flex, Card } from "@aws-amplify/ui-react"
-import { Container } from "../library/container"
-import { ChatRendered } from "../library/chat/chat-rendered"
-import { useEffect, useState } from "react"
-import { AIAgentChatConnections } from "./agent-api-chat-connections"
-import { useAgentApiConversation } from "../apis/agent-api/hooks/useConversations"
-import { useAgentConversationMetadata, useResetAgentConversationMetadata } from "../apis/agent-api/hooks/useMetadata"
-import {AudioRecorder} from "../library/chat/audio-recorder";
+import React, { useEffect, useState, useCallback, useRef } from "react";
+import { useParams } from "react-router-dom";
+import { useAgentApiAgent, useAgentApiSendMessage, useAgentApiSubscribeConversation } from "../apis/agent-api";
+import { Loader, TextAreaField, View, Flex, Card } from "@aws-amplify/ui-react";
+import { Container } from "../library/container";
+import { ChatRendered } from "../library/chat/chat-rendered";
+import { useAgentApiConversation } from "../apis/agent-api/hooks/useConversations";
+import { useAgentConversationMetadata, useResetAgentConversationMetadata } from "../apis/agent-api/hooks/useMetadata";
+import { AudioRecorder } from "../library/chat/audio-recorder";
+import { LanguageSelector } from "../library/chat/language-selector";
 
-/*
-* Chat Dialog & Actions
-* */
+export function AIAgentViewChat() {
+    const { chatId } = useParams();
+    const conversationObject = useAgentApiConversation(chatId);
+    const agentObject = useAgentApiAgent(conversationObject.value?.agent);
+    const [chatString, setChatString] = useState<string>("");
+    const conversationMetadata = useAgentConversationMetadata();
+    const resetMetadata = useResetAgentConversationMetadata();
+    const submitMessage = useAgentApiSendMessage(chatId);
+    useAgentApiSubscribeConversation(chatId);
 
-export function AIAgentViewChat () {
-    
-    const {chatId} = useParams()
-    const conversationObject = useAgentApiConversation(chatId)
-    const agentObject = useAgentApiAgent(conversationObject.value?.agent)
-    const [chatString, setChatString] = useState<string>()
-    const conversationMetadata = useAgentConversationMetadata()
-    const resetMetadata = useResetAgentConversationMetadata()
-    const submitMessage = useAgentApiSendMessage(chatId)
-    useAgentApiSubscribeConversation(chatId)
+    const [languageIn, setLanguageIn] = useState("English");
+    const [languageOut, setLanguageOut] = useState("French");
 
-    //TODO: Add a lanuage selector
-    //https://ui.docs.amplify.aws/react/components/selectfield
+    // Use refs to store the latest language values
+    const languageInRef = useRef(languageIn);
+    const languageOutRef = useRef(languageOut);
 
-    //@ts-nocheck
+    const handleLanguageChange = useCallback((newLanguageIn: string, newLanguageOut: string) => {
+        console.log('handleLanguageChange called with:', newLanguageIn, newLanguageOut);
+        setLanguageIn(newLanguageIn);
+        setLanguageOut(newLanguageOut);
+        // Update refs
+        languageInRef.current = newLanguageIn;
+        languageOutRef.current = newLanguageOut;
+    }, []);
+
+    const handleRecordingComplete = useCallback(async (audioUrl: string) => {
+        console.log('Handling the completed recording..');
+        console.log('Audio URL:', audioUrl);
+        console.log('Language In:', languageInRef.current);
+        console.log('Language Out:', languageOutRef.current);
+
+        submitMessage({
+            message: audioUrl,
+            audioFileUrl: audioUrl,
+            languageIn: languageInRef.current,
+            languageOut: languageOutRef.current
+        });
+    }, [submitMessage]);
+
+    useEffect(() => {
+        console.log('AIAgentViewChat - languageIn:', languageIn, 'languageOut:', languageOut);
+        // Update refs when state changes
+        languageInRef.current = languageIn;
+        languageOutRef.current = languageOut;
+    }, [languageIn, languageOut]);
+
     useEffect(() => {
         if (conversationMetadata.partialMessage && !conversationMetadata.responding) {
-            resetMetadata()
+            resetMetadata();
         }
-    }, [chatId, resetMetadata, conversationMetadata])
+    }, [chatId, resetMetadata, conversationMetadata]);
 
     if (conversationObject.isUnloaded() || !conversationObject.value || agentObject.isUnloaded() || !agentObject.value) {
-        return <Loader/>
+        return <Loader />;
     }
-
-    const handleRecordingComplete = async (audioFileUrl: string) => {
-
-        // Send the message with the audio file URL
-        console.log("handleRecordingComplete")
-        submitMessage({ message: chatString, audioFileUrl: audioFileUrl });
-        setChatString('')
-      // Fetch pre-signed URL from your backend
-      // const response = await fetch('/api/get-presigned-url');
-      // const { uploadURL } = await response.json();
-
-      // Use fetch or Axios to PUT the blob to the pre-signed URL
-      // const uploadResponse = await fetch(uploadURL, {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'audio/webm;codecs=opus', // Or the correct content type of your audio blob
-      //   },
-      //   body: audioBlob,
-      // });
-
-      // if (uploadResponse.ok) {
-      //   console.log('Upload successful');
-      //   // Optionally, notify your backend about the new file or update your UI accordingly
-      // } else {
-      //   console.error('Upload failed');
-      // }
-    };
 
 
     return (
         <Flex>
             <View width={900}>
-                <Container heading={`Chatting with '${agentObject.value.name}'`} minHeight={500} padBody={0}>
+                <Container heading={`Translation`} minHeight={500} padBody={0}>
                     <ChatRendered/>
                 </Container>
-                <AudioRecorder onRecordingComplete={handleRecordingComplete}/>
+                <Card justify-content="center">
+                    <Flex direction={'row'} alignContent={'center'} justify-content="center" >
+
+                        <View >
+                            <AudioRecorder onRecordingComplete={handleRecordingComplete}/>
+                        </View>
+
+
+                    </Flex>
+                </Card>
+
                 <Card>
                     {
                         conversationMetadata.responding && <Loader variation="linear"/>
                     }
                     {
-                        !conversationMetadata.responding && <TextAreaField 
+                        !conversationMetadata.responding && <TextAreaField
                             labelHidden
+                            className={'hidden'}
                             label="Message"
                             placeholder="Type your message here"
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter') {
-                                    const audioFileUrl = "http://www.kittentech.com"
-                                    // Send the message with the audio file URL
-                                    submitMessage({ message: chatString, audioFileUrl: audioFileUrl });
+                                    const audioFileUrl = "http://www.testurl.com"
                                     setChatString('')
                                     e.preventDefault()
                                 }
@@ -94,13 +104,19 @@ export function AIAgentViewChat () {
                             value={chatString}
                             onChange={(e) => {
                                 setChatString(e.target.value)
-                            }} 
+                            }}
                         />
                     }
                 </Card>
             </View>
             <View width={300}>
-                <AIAgentChatConnections/>
+                <Container heading="Language">
+                  <LanguageSelector
+                    languageIn={languageIn}
+                    languageOut={languageOut}
+                    onLanguageChange={handleLanguageChange}
+                  />
+                </Container>
             </View>
         </Flex>
     )
