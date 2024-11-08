@@ -64,8 +64,55 @@ def transcribe_audio(audio_url):
         logging.error("Transcription job not completed successfully")
         raise Exception("Transcription job failed.")
 
+'''
+This function is used to call the Anthropic Bedrock API to generate a response to a given prompt.
+This calls the claude-v2, which is the original model called by this sample app. 
+If you have access to the more recent claude-3, you can use that model instead.
+'''
+def call_anthropic_bedrock_2(prompt):
+    connect_timeout = 5
+    read_timeout = 60
 
-def call_anthropic_bedrock(prompt):
+    config = Config(
+        connect_timeout=connect_timeout,
+        read_timeout=read_timeout,
+        retries={'max_attempts': 3},
+        region_name='us-east-1'
+    )
+
+    bedrock = boto3.client('bedrock-runtime', config=config)
+
+    modelId = 'anthropic.claude-v2'
+    accept = 'application/json'
+    contentType = 'application/json'
+
+    response = bedrock.invoke_model(
+        body=json.dumps({
+            "prompt": prompt + "\nAssistant: ",
+            "max_tokens_to_sample": 500,
+            "temperature": 0,
+            "top_k": 250,
+            "top_p": 0.999,
+            "stop_sequences": [],
+            "anthropic_version": "bedrock-2023-05-31",
+        }),
+        modelId=modelId,
+        accept=accept,
+        contentType=contentType
+    )
+
+    logging.info(f"Anthropic Bedrock response: {response}")
+
+    response_body = json.loads(response.get('body').read())
+    completion = response_body.get('completion')
+    logging.info(completion)
+    return completion
+
+'''
+This function is used to call the Anthropic Bedrock API to generate a response to a given prompt.
+This calls the more recent claude-3 for those who have access to it.
+'''
+def call_anthropic_bedrock_3(prompt):
 
     config = Config(
         region_name='us-east-1'
@@ -130,6 +177,31 @@ def getLanguagePrompt(language_in, language_out, transcribed_text):
             '''
     return lang_prompt
 
+def get_secret():
+    """Retrieve Deepgram API key from AWS Secrets Manager"""
+    secret_name = "deepgram/api-key"
+    region_name = "us-east-1"
+
+    session = boto3.session.Session()
+    client = session.client(
+        service_name='secretsmanager',
+        region_name=region_name
+    )
+
+    try:
+        get_secret_value_response = client.get_secret_value(
+            SecretId=secret_name
+        )
+    except ClientError as e:
+        logging.error(f"Error retrieving secret: {e}")
+        raise e
+    else:
+        if 'SecretString' in get_secret_value_response:
+            secret = json.loads(get_secret_value_response['SecretString'])
+            return secret['DEEPGRAM_API_KEY']
+
+
+
 
 def handler(event, context):
     # Setup ability to Respond to chat
@@ -146,9 +218,7 @@ def handler(event, context):
         audio_url = event['userInput']['audioFileUrl']
         logging.info(f"**>> URL: {audio_url}")
 
-        # Get the language in and language out TODO: from the event
-        # language_in = "English"
-        # language_out = "French"
+        # Get language
         language_in = event['userInput']['languageIn']
         language_out = event['userInput']['languageOut']
         logging.info(f"**>> LANGUAGE IN: {language_in}")
@@ -168,13 +238,14 @@ def handler(event, context):
         logging.info(f"prompt string: {prompt_string}")
 
         # Forward the transcribed text to Anthropic Bedrock
-        transcribed_text = call_anthropic_bedrock(prompt_string)
+        transcribed_text = call_anthropic_bedrock_2(prompt_string)
         logging.info(f"response from anthropic bedrock: {transcribed_text}")
 
         # Generate audio from the response from Anthropic Bedrock
         # https://developers.deepgram.com/docs/tts-models for voice selection
-        DEEPGRAM_API_KEY = 'Yours goes here'
-        DEEPGRAM_API_KEY = '1de775fcceda2010217372f1e57ca0dd3c9226a6'
+
+        # Replace the hardcoded API key with the secret retrieval
+        DEEPGRAM_API_KEY = get_secret()
         model = "aura-angus-en"
         audio_folder = '/tmp'
         if not os.path.exists(audio_folder):

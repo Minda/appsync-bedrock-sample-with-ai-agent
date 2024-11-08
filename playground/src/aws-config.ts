@@ -1,9 +1,14 @@
 import AWS from 'aws-sdk';
 
+if (!process.env.REACT_APP_REGION || !process.env.REACT_APP_IDENTITY_POOL_ID) {
+  throw new Error('Required AWS configuration is missing. Please check your .env file');
+}
+
+
 AWS.config.update({
-  region: 'us-east-1',
+  region: process.env.REACT_APP_REGION,
   credentials: new AWS.CognitoIdentityCredentials({
-    IdentityPoolId: 'us-east-1:ec2240ed-1b9c-41f4-a234-47be0ac1ea70',
+    IdentityPoolId: process.env.REACT_APP_IDENTITY_POOL_ID,
   }),
 });
 
